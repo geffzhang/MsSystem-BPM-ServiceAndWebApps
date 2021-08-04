@@ -1,40 +1,13 @@
 version: '3.4'
 
 services:
-  
+
   redis:
     image: redis
     container_name: redis
     ports:
       - "6379:6379"
     restart: always
-
-  mysql:
-    image: mysql/mysql-server:5.7
-    container_name: mysql
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: "123456"
-    volumes:
-      - "./docker/mysql/conf/my.cnf:/etc/my.cnf"
-      - "./docker/mysql/init:/docker-entrypoint-initdb.d/"
-    restart: always
-
-  zipkin:
-    image: openzipkin/zipkin
-    container_name: zipkin
-    environment:
-      - STORAGE_TYPE=mysql
-      - MYSQL_DB=zipkin
-      - MYSQL_USER=root
-      - MYSQL_PASS=123456
-      - MYSQL_TCP_PORT=3306
-      - MYSQL_HOST=mysql
-    ports:
-      - "9411:9411"
-    depends_on:
-      - mysql
 
   rabbitmq:
     image: rabbitmq:3.7-management
@@ -47,82 +20,71 @@ services:
       - "15672:15672"
       - "5672:5672"
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./docker/elasticsearch-data:/usr/share/elasticsearch/data
+    restart: always
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.2.4
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    restart: always
+
   gateway:
     container_name: gateway
     ports:
       - "5000:5000"
-    depends_on:
-      - mysql
-      - identity
-      - oaapi
-      - sysapi
-      - wfapi
-      - weixinapi
+    restart: always
 
   identity:
     container_name: identity
     ports:
       - "5200:5200"
     depends_on:
-      - mysql
-      - zipkin
       - redis
       - rabbitmq
+    restart: always
 
   sysapi:
     container_name: sysapi
     ports:
       - "5002:5002"
     depends_on:
-      - mysql
-      - zipkin
       - redis
       - rabbitmq
+    restart: always
 
   wfapi:
     container_name: wfapi
     ports:
       - "5003:5003"
     depends_on:
-      - mysql
-      - zipkin
       - redis
       - rabbitmq
+    restart: always
 
   weixinapi:
     container_name: weixinapi
     ports:
       - "5004:5004"
     depends_on:
-      - mysql
-      - zipkin
       - redis
       - rabbitmq
+    restart: always
 
   oaapi:
     container_name: oaapi
     ports:
       - "5006:5006"
     depends_on:
-      - mysql
-      - zipkin
       - redis
       - rabbitmq
-
-  web:
-    container_name: web
-    ports:
-      - "8000:8000"
-    depends_on:
-      - mysql
-      - gateway
-
-  nginx:
-    image: nginx
-    container_name: nginx
-    volumes:
-      - "./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf"
-    ports:
-      - "80:80"
-    depends_on:
-      - web
+    restart: always

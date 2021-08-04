@@ -31,9 +31,17 @@ namespace MsSystem.Weixin.API.Controllers
         }
 
         [HttpPost]
+        [ActionName("Login")]
         public async Task<MiniprogramLoginResult> Login([FromBody]LoginDTO login)
         {
             jscode2session data = await GetOpenIdAsync(login.Code);
+            if (data == null)
+            {
+                return new MiniprogramLoginResult
+                {
+                    StatusCode = MiniProgramResultCode.error
+                };
+            }
             var dbuser = await _userService.GetByOpenIdAsync(data.openid);
             if (dbuser == null)
             {
@@ -57,9 +65,17 @@ namespace MsSystem.Weixin.API.Controllers
             }
         }
         [HttpPost]
+        [ActionName("Register")]
         public async Task<MiniprogramRegisterResult> Register([FromBody]RegisterDTO register)
         {
             jscode2session data = await GetOpenIdAsync(register.Code);
+            if (data == null)
+            {
+                return new MiniprogramRegisterResult
+                {
+                    StatusCode = MiniProgramResultCode.error
+                };
+            }
             var res = await _userService.RegisterAsync(data, register.RawData);
             return res;
         }
@@ -68,8 +84,17 @@ namespace MsSystem.Weixin.API.Controllers
             var minprogram = _configuration.GetSection("WxMiniProgram");
             string url = $"https://api.weixin.qq.com/sns/jscode2session?appid={minprogram["AppId"]}&secret={minprogram["AppSecret"]}&js_code={code}&grant_type=authorization_code";
             var responseString = await _clientFactory.CreateClient().GetStringAsync(url);
-            jscode2session data = JsonConvert.DeserializeObject<jscode2session>(responseString);
-            return data;
+
+            if (responseString.Contains("errcode"))
+            {
+                return null;
+            }
+            else
+            {
+                jscode2session data = JsonConvert.DeserializeObject<jscode2session>(responseString);
+                return data;
+            }
+
         }
     }
 }

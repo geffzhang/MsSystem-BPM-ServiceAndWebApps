@@ -1,11 +1,8 @@
-﻿using JadeFramework.Zipkin;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
-using NLog.Web;
 
 namespace MsSystem.Identity
 {
@@ -22,7 +19,7 @@ namespace MsSystem.Identity
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddZipkin(Configuration.GetSection(nameof(ZipkinOptions)));
+            //services.AddZipkin(Configuration.GetSection(nameof(ZipkinOptions)));
 
             //services.AddServiceRegistration();
             services.AddIdentityServer()
@@ -32,22 +29,12 @@ namespace MsSystem.Identity
                 .AddProfileService<ProfileService>();
 
 
-            services.AddMvc();
+            services.AddControllers();
         }
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app)
         {
-            app.UseZipkin();
-            loggerFactory.AddNLog();
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                env.ConfigureNLog("NLog.Development.config");
-            }
-            else
-            {
-                env.ConfigureNLog("NLog.config");
-            }
-            app.UseMvc();
+            //app.UseZipkin();
+            app.UseRouting();
             app.UseIdentityServer();
             //app.UseServiceRegistration(new ServiceCheckOptions
             //{

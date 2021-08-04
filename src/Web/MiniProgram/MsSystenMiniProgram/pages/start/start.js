@@ -1,5 +1,4 @@
 const TOKEN=require('../../wxapi/token.js')
-const WXAPI = require('../../wxapi/main')
 const HTTP = require('../../wxapi/http.js')
 var app = getApp();
 Page({
@@ -11,7 +10,8 @@ Page({
     remind: '加载中',
     angle: 0,
     needLogin:false,
-    btnClass:null
+    btnClass: null,
+    copyTime: new Date().getFullYear(),
   },
 
   /**
@@ -61,14 +61,14 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow: function () {
-
+    console.info('onShow');
   },
 
   /**
    * 生命周期函数--监听页面隐藏
    */
   onHide: function () {
-
+    console.info('onHide');
   },
 
   /**
@@ -99,17 +99,32 @@ Page({
 
   },
   goToIndex(){
-    wx.switchTab({
-      url: '/pages/main/index'
-    })
+    const isauth = TOKEN.isAuthenticated();
+    if(!isauth){
+      wx.showLoading({
+        title:'正在离线浏览...',
+        success:function(){
+          wx.switchTab({
+            url: '/pages/main/index'
+          })
+        }
+      });
+    }else{
+      app.globalData.userInfo = wx.getStorageSync('userInfo')
+      wx.switchTab({
+        url: '/pages/main/index'
+      })
+    }
   },
   bindGetUserInfo: function (e) {
     if (!e.detail.userInfo) {
       return;
     }
+    var that = this;
     if (app.globalData.isConnected) {
-      wx.setStorageSync('userInfo', e.detail.userInfo)
-      this.login();
+      wx.setStorageSync('userInfo', e.detail.userInfo);
+      app.globalData.userInfo = e.detail.userInfo;
+      that.login();
     } else {
       wx.showToast({
         title: '当前无网络',
@@ -121,48 +136,82 @@ Page({
     const that = this;
     wx.login({
       success: function (res) {
+
+        wx.getUserInfo({
+          success:function(infores){
+            app.globalData.userInfo = infores.userInfo;
+          }
+        });
+
         that.setData({
           btnClass:'hidden'
         });
-        wx.showLoading({
-          title: '登录中...',
-        })
-        HTTP.login({ code: res.code }, function (response) {
-          if (response.code == 10000) {
-            // 去注册
-            that.registerUser();
-            return;
-          }
-          if (response.code != 0) {
-            wx.showModal({
-              title: '提示',
-              content: '无法登录，是否重试？',
-              showCancel: true,
-              success(){
-                that.login();
-              },
-              fail(){
-                that.onLoad();
-              }
-            })
-            return;
-          }
-          wx.setStorageSync('userid', response.Data.Id)
-          app.navigateToLogin = false
-          wx.switchTab({
-            url: '/pages/main/index'
+        const isauth =TOKEN.isAuthenticated();
+        if(isauth){
+          wx.showLoading({
+            title: '登录中...',
           })
-        });
+          HTTP.login({ code: res.code }, function (response) {
+            if (response.code == 10000) {
+              // 去注册
+              that.registerUser();
+              return;
+            }
+            if (response.code != 0) {
+
+              wx.showModal({
+                title: '提示',
+                content: '系统未知错误',
+                showCancel: false,
+                success(){
+                  wx.switchTab({
+                    url: '/pages/main/index'
+                  })
+                }
+              })
+              // wx.showModal({
+              //   title: '提示',
+              //   content: '无法登录，是否重试？',
+              //   showCancel: true,
+              //   success(){
+              //     that.login();
+              //   },
+              //   fail(){
+              //     that.onLoad();
+              //   }
+              // })
+              return;
+            }
+            wx.setStorageSync('userid', response.Data.Id)
+            app.navigateToLogin = false
+            wx.switchTab({
+              url: '/pages/main/index'
+            })
+          });
+        } else {
+          wx.showLoading({
+            title: '正在离线浏览...',
+            success:function(){
+              wx.setStorageSync('userid', 1)
+              app.navigateToLogin = false
+              wx.switchTab({
+                url: '/pages/main/index'
+              });
+            }
+          });
+
+        }
       }
     })
   },
   registerUser: function () {
-    let that = this;
+    var that = this;
     wx.login({
-      success: function (res) {
-        let code = res.code; // 微信登录接口返回的 code 参数，下面注册接口需要用到
+      success: function (fres) {
+        var code = fres.code; // 微信登录接口返回的 code 参数，下面注册接口需要用到
         wx.getUserInfo({
           success: function (res) {
+            app.globalData.userInfo = res.userInfo;
             HTTP.register({ code: code, rawData: res.rawData }, function (response) {
               wx.setStorageSync('userid', response.Data.Id)
               wx.hideLoading();

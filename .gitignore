@@ -245,3 +245,6 @@ ModelManifest.xml
 /.localhistory
 /dockermysql
 /docker/mysql/db
+*.pubxml
+/docker/elasticsearch-data/nodes/0
+/src/Web/MVC/MsSystem.Web/wwwroot/uploadfile

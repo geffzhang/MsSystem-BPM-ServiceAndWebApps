@@ -56,6 +56,9 @@ namespace MsSystem.Web.Areas.WF.Infrastructure
             public static string ProcessTransitionFlowAsync(string baseUri) => $"{baseUri}/WorkFlowInstance/ProcessTransitionFlowAsync";
             public static string GetFlowImageAsync(string baseUri, Guid flowid, Guid? instanceId)
                 => $"{baseUri}/WorkFlowInstance/GetFlowImageAsync?flowid={flowid.ToString()}&InstanceId={instanceId?.ToString()}";
+
+            public static string UrgeAsync(string baseUri) => $"{baseUri}/WorkFlowInstance/UrgeAsync";
+
         }
         public static class WorkFlow
         {
@@ -67,6 +70,8 @@ namespace MsSystem.Web.Areas.WF.Infrastructure
             public static string DeleteAsync(string baseUri) => $"{baseUri}/WorkFlow/DeleteAsync";
             public static string GetAllLinesAsync(string baseUri) => $"{baseUri}/WorkFlow/GetAllLinesAsync";
             public static string GetLineAsync(string baseUri, Guid lineid) => $"{baseUri}/WorkFlow/GetLineAsync?lineid={lineid.ToString()}";
+            public static string NewVersionAsync(string baseUri) => $"{baseUri}/WorkFlow/NewVersionAsync";
+
         }
     }
 }
